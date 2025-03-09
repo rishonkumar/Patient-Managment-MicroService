@@ -1,8 +1,12 @@
 package com.pm.patientservice.controller;
 
+import com.pm.patientservice.dto.ApiResponse;
 import com.pm.patientservice.dto.PatientRequestDTO;
 import com.pm.patientservice.dto.PatientResponseDTO;
 import com.pm.patientservice.dto.validators.CreatePatientValidationGroup;
+import com.pm.patientservice.exception.EmailAlreadyExistsException;
+import com.pm.patientservice.exception.PatientNotFoundException;
+import com.pm.patientservice.model.Patient;
 import com.pm.patientservice.service.PatientService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -13,6 +17,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
+
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @RestController
 @RequestMapping("/patients")
@@ -35,10 +42,23 @@ public class PatientController {
     @PostMapping()
     @Operation(summary = "Create a new Patient")
     public ResponseEntity<PatientResponseDTO> createPatient(@Validated({Default.class, CreatePatientValidationGroup.class})
-                                                                @RequestBody PatientRequestDTO patientRequestDTO) {
+                                                            @RequestBody PatientRequestDTO patientRequestDTO) {
         PatientResponseDTO patientResponseDTO = patientService.createPatient(patientRequestDTO);
 
         return ResponseEntity.ok().body(patientResponseDTO);
+    }
+
+    @PostMapping("/create1")
+    @Operation(summary = "Create a new Patient")
+    public ResponseEntity<ApiResponse> createPatientcheck(@Validated({Default.class, CreatePatientValidationGroup.class})
+                                                          @RequestBody PatientRequestDTO patientRequestDTO) {
+
+        try {
+            Object data  = patientService.createPatient(patientRequestDTO);
+            return ResponseEntity.ok(new ApiResponse("Patient Success", data));
+        } catch (EmailAlreadyExistsException e) {
+            return ResponseEntity.ok(new ApiResponse(e.getMessage(), null));
+        }
     }
 
     @PutMapping("/{id}")
@@ -53,7 +73,7 @@ public class PatientController {
 
     @DeleteMapping("{id}")
     @Operation(summary = "Delete a new Patient")
-    public ResponseEntity<Void>deletePatient(@PathVariable UUID id) {
+    public ResponseEntity<Void> deletePatient(@PathVariable UUID id) {
         patientService.deletePatient(id);
         return ResponseEntity.noContent().build();
     }
